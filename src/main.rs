@@ -1,69 +1,4 @@
-extern crate clap;
-extern crate gfa;
-extern crate saboten;
-
-// use this form for the clap 4.1 API
-/*
-use clap::Parser;
-
-/// Simple program to greet a person
-
-fn main() {
-   let args = Args::parse();
-
-   for _ in 0..args.count {
-       println!("Hello {}!", args.name)
-   }
-}
-*/
-
 use std::{path::PathBuf, collections::HashSet};
-
-// use clap 4.1 style as described above to parse arguments, taking --gfa as an input pangenome graph
-// here we're going to load in a GFA file using the gfa crate
-// we'll then decompose it into its underlying bubble structure using the saboten crate, example usage:
-/*
-    let mut ultrabubbles = if let Some(path) = &args.ultrabubbles_file {
-        super::saboten::load_ultrabubbles(path)
-    } else {
-        super::saboten::find_ultrabubbles(gfa_path)
-    }?;
-
-    info!("Using {} ultrabubbles", ultrabubbles.len());
-
-    ultrabubbles.sort();
-
-    let ultrabubble_nodes = ultrabubbles
-        .iter()
-        .flat_map(|&(a, b)| {
-            use std::iter::once;
-            once(a).chain(once(b))
-        })
-        .collect::<FnvHashSet<_>>();
-*/
-// we'll then output the bubble structure as a GFA file and work through it with this kind of pattern
-/*
-    all_vcf_records.par_extend(
-        ultrabubbles
-            .par_iter()
-            .progress_with(p_bar)
-            .filter_map(|&(from, to)| {
-                let vars = variants::detect_variants_in_sub_paths(
-                    &var_config,
-                    &path_data,
-                    ref_path_names.as_ref(),
-                    &path_indices,
-                    from,
-                    to,
-                )?;
-
-                let vcf_records = variants::variant_vcf_record(&vars);
-                Some(vcf_records)
-            })
-            .flatten(),
-    );
- */
-// begin work here
 use log::*;
 use clap::*;
 use anyhow::*;
@@ -151,21 +86,46 @@ struct Args {
 
 fn main() -> Result<()> {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Warn)
+        .filter_level(log::LevelFilter::Debug)
         .init();
     let args = Args::parse();
     let input = args.input;
     let mut ultrabubbles = find_ultrabubbles(&input.into())?;
     ultrabubbles.sort();
+    // probably we need a multiset or don't flatten
     let ultrabubble_nodes = ultrabubbles
         .iter()
-        .flat_map(|&(a, b)| {
-            use std::iter::once;
-            once(a).chain(once(b))
-        })
+        .flat_map(|&(a, b)| [a,b])
         .collect::<HashSet<_>>();
     for node in ultrabubble_nodes {
         println!("{}", node);
     }
+    for b in ultrabubbles {
+        println!("{b:?}");
+    }
+
+    // we'll then output the bubble structure as a GFA file and work through it with this kind of pattern
+/*
+    all_vcf_records.par_extend(
+        ultrabubbles
+            .par_iter()
+            .progress_with(p_bar)
+            .filter_map(|&(from, to)| {
+                let vars = variants::detect_variants_in_sub_paths(
+                    &var_config,
+                    &path_data,
+                    ref_path_names.as_ref(),
+                    &path_indices,
+                    from,
+                    to,
+                )?;
+
+                let vcf_records = variants::variant_vcf_record(&vars);
+                Some(vcf_records)
+            })
+            .flatten(),
+    );
+ */
+
     Ok(())
 }
